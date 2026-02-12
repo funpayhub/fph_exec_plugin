@@ -78,8 +78,6 @@ async def execute_python_code(
     exec_registry: ExecutionResultsRegistry,
     tg_ui: UIRegistry,
 ) -> None:
-    if message.from_user.id != 5991368886:
-        return
 
     text = message.text or message.caption
 
