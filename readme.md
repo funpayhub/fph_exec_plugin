@@ -1,0 +1,1 @@
+Exec Plugin для FunPay Hub.
