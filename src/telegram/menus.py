@@ -9,7 +9,7 @@ from funpayhub.lib.telegram.ui.types import MenuBuilder, MenuModification
 from funpayhub.lib.base_app.telegram.app.ui.callbacks import OpenMenu
 from funpayhub.lib.base_app.telegram.app.ui.ui_finalizers import (
     StripAndNavigationFinalizer,
-    build_view_navigation_buttons,
+    build_view_navigation_btns,
 )
 
 from .callbacks import SaveExecCode, SendExecFile
@@ -26,7 +26,6 @@ MAX_TEXT_LEN: Final = 3000
 
 
 async def exec_view_kb(ctx: MenuContext, mode: Literal['output', 'code']) -> KeyboardBuilder:
-    callback_data = ctx.callback_data
     keyboard = KeyboardBuilder()
     keyboard.add_callback_button(
         button_id='download_exec_files',
@@ -34,7 +33,7 @@ async def exec_view_kb(ctx: MenuContext, mode: Literal['output', 'code']) -> Key
         callback_data=OpenMenu(
             menu_id='exec_code' if mode == 'output' else 'exec_output',
             data={'exec_id': ctx.data['exec_id']},
-            history=callback_data.history if callback_data is not None else [],
+            ui_history=ctx.ui_history,
         ).pack(),
     )
 
@@ -75,7 +74,6 @@ async def exec_view_text(ctx: MenuContext, result: ExecR, mode: Literal['output'
 class ExecListMenuBuilder(MenuBuilder, menu_id='exec_list', context_type=MenuContext):
     async def build(self, ctx: MenuContext, exec_registry: ExecRReg) -> Menu:
         keyboard = KeyboardBuilder()
-        callback_data = ctx.callback_data
 
         for exec_id, result in exec_registry.registry.items():
             keyboard.add_callback_button(
@@ -84,7 +82,7 @@ class ExecListMenuBuilder(MenuBuilder, menu_id='exec_list', context_type=MenuCon
                 callback_data=OpenMenu(
                     menu_id='exec_output',
                     data={'exec_id': exec_id},
-                    history=callback_data.as_history() if callback_data is not None else [],
+                    ui_history=ctx.as_ui_history(),
                 ).pack(),
             )
 
@@ -102,7 +100,7 @@ class ExecOutputMenuBuilder(MenuBuilder, menu_id='exec_output', context_type=Men
 
         return Menu(
             main_text=await exec_view_text(ctx, result, 'output'),
-            header_keyboard=await build_view_navigation_buttons(ctx, total_pages),
+            header_keyboard=await build_view_navigation_btns(ctx, total_pages),
             main_keyboard=await exec_view_kb(ctx, 'output'),
             finalizer=StripAndNavigationFinalizer(),
         )
@@ -115,7 +113,7 @@ class ExecCodeMenuBuilder(MenuBuilder, menu_id='exec_code', context_type=MenuCon
 
         return Menu(
             main_text=await exec_view_text(ctx, result, 'code'),
-            header_keyboard=await build_view_navigation_buttons(ctx, total_pages),
+            header_keyboard=await build_view_navigation_btns(ctx, total_pages),
             main_keyboard=await exec_view_kb(ctx, 'code'),
             finalizer=StripAndNavigationFinalizer(),
         )
@@ -129,7 +127,7 @@ class MainMenuModification(MenuModification, modification_id='exec:main_menu_mod
             text='💻 Exec Registry',
             callback_data=OpenMenu(
                 menu_id='exec_list',
-                history=ctx.callback_data.as_history() if ctx.callback_data is not None else [],
+                ui_history=ctx.as_ui_history(),
             ).pack(),
         )
 

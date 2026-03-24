@@ -62,13 +62,8 @@ async def execute_code(
 
 
 @r.message(Command('execlist'))
-async def exec_list_menu(message: Message, tg_ui: UIRegistry, data: dict[str, Any]):
-    context = MenuContext(
-        menu_id='exec_list',
-        trigger=message,
-        data={'callback_data': OpenMenu(menu_id='exec_list')},
-    )
-    await (await tg_ui.build_menu(context, data)).answer_to(message)
+async def exec_list_menu(message: Message):
+    await MenuContext(menu_id='exec_list', trigger=message).answer_to()
 
 
 @r.message(Command('exec'))
@@ -76,7 +71,6 @@ async def execute_python_code(
     message: Message,
     data: dict[str, Any],
     exec_registry: ExecutionResultsRegistry,
-    tg_ui: UIRegistry,
 ) -> None:
 
     text = message.text or message.caption
@@ -107,20 +101,11 @@ async def execute_python_code(
     data = data | {'message': message}
     r = await execute_code(exec_registry, exec_id, source, data)
 
-    context = MenuContext(
+    await MenuContext(
         menu_id='exec_output',
         trigger=message,
-        data={
-            'callback_data': OpenMenu(
-                menu_id='exec_output',
-                data={'exec_id': r.id},
-                history=[OpenMenu(menu_id='exec_list').pack(hash=False)],
-            ),
-            'exec_id': r.id,
-        },
-    )
-
-    await (await tg_ui.build_menu(context, data)).answer_to(message)
+        data={'exec_id': r.id},
+    ).answer_to()
 
 
 @r.callback_query(SendExecFile.filter())
