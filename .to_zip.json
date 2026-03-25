@@ -1,0 +1,7 @@
+{
+  "root": "exec_plugin",
+  "entries": [
+    "src",
+    "manifest.json"
+  ]
+}
