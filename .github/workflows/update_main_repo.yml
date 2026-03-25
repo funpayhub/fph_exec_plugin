@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      PLUGIN_ID: com.github.qvvonk.funpayhub.exec_plugin
+      PLUGIN_ID: com.github.qvvonk.exec_plugin
       PLUGIN_URL: ${{ github.event.client_payload.url }}
 
     steps:
