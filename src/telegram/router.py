@@ -16,8 +16,7 @@ from aiogram.types import Message, CallbackQuery, BufferedInputFile, InputMediaD
 from aiogram.filters import Command
 from exec_plugin.src.types import ExecutionResult, ExecutionResultsRegistry
 
-from funpayhub.lib.telegram.ui import UIRegistry, MenuContext
-from funpayhub.lib.base_app.telegram.app.ui.callbacks import OpenMenu
+from funpayhub.lib.telegram.ui import MenuContext
 
 from .callbacks import SaveExecCode, SendExecFile
 
