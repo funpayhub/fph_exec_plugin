@@ -33,7 +33,7 @@ class ExecutionResult:
         return len(self.output.encode('utf-8'))
 
 
-class ExecutionResultsRegistry:
+class ExecRegistry:
     def __init__(self) -> None:
         self.registry: dict[str, ExecutionResult] = {}
 

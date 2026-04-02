@@ -18,7 +18,7 @@ from .callbacks import SaveExecCode, SendExecFile
 if TYPE_CHECKING:
     from exec_plugin.src.types import (
         ExecutionResult as ExecR,
-        ExecutionResultsRegistry as ExecRReg,
+        ExecRegistry as ExecRReg,
     )
 
 

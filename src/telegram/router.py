@@ -14,7 +14,7 @@ from pathlib import Path
 from aiogram import Router
 from aiogram.types import Message, CallbackQuery, BufferedInputFile, InputMediaDocument
 from aiogram.filters import Command
-from exec_plugin.src.types import ExecutionResult, ExecutionResultsRegistry
+from exec_plugin.src.types import ExecutionResult, ExecRegistry
 
 from funpayhub.lib.telegram.ui import MenuContext
 
@@ -25,7 +25,7 @@ r = Router(name='exec_plugin')
 
 
 async def execute_code(
-    registry: ExecutionResultsRegistry,
+    registry: ExecRegistry,
     exec_id: str | None,
     code: str,
     execution_dict: dict[str, Any],
@@ -66,24 +66,18 @@ async def exec_list_menu(message: Message):
 
 
 @r.message(Command('exec'))
-async def execute_python_code(
-    message: Message,
-    data: dict[str, Any],
-    exec_registry: ExecutionResultsRegistry,
-) -> None:
-
-    text = message.text or message.caption
-
+async def execute_python_code(m: Message, exec_registry: ExecRegistry, **kwargs: Any) -> Any:
+    text = m.text or m.caption
     split = text.split('\n', maxsplit=1)
     command = split[0].strip().split(maxsplit=1)
     exec_id = command[1] if len(command) > 1 else None
     source = split[1].strip() if len(split) > 1 else None
 
     if not exec_id and not source:
-        await message.answer(
+        return m.answer(
             'Укажите ID исполнения на одной строке с /exec или код исполнения с новой строки.',
         )
-        return
+
     if exec_id and not source:
         path = Path(exec_id)
         if path.exists() and path.is_file():
@@ -92,28 +86,18 @@ async def execute_python_code(
 
         else:
             if exec_id not in exec_registry.registry:
-                await message.answer(f'Исполнение {exec_id!r} не найдено.')
-                return
+                return m.answer(f'Исполнение {exec_id!r} не найдено.')
             source = exec_registry.registry[exec_id].code
         exec_id = None
 
-    data = data | {'message': message}
+    data = kwargs | {'message': m, 'exec_registry': exec_registry}
     r = await execute_code(exec_registry, exec_id, source, data)
-
-    await MenuContext(
-        menu_id='exec_output',
-        trigger=message,
-        data={'exec_id': r.id},
-    ).answer_to()
+    await MenuContext(menu_id='exec_output', trigger=m, data={'exec_id': r.id}).answer_to()
 
 
 @r.callback_query(SendExecFile.filter())
-async def send_exec_file(
-    query: CallbackQuery,
-    exec_registry: ExecutionResultsRegistry,
-    callback_data: SendExecFile,
-) -> None:
-    result = exec_registry.registry[callback_data.exec_id]
+async def send_exec_file(q: CallbackQuery, exec_registry: ExecRegistry, cbd: SendExecFile) -> Any:
+    result = exec_registry.registry[cbd.exec_id]
     files = []
 
     if 0 < result.code_size <= 51380224:
@@ -127,31 +111,26 @@ async def send_exec_file(
         files.append(
             InputMediaDocument(
                 media=BufferedInputFile(result.output.encode(), filename='output.txt'),
-                caption=f'Вывод выполнения {callback_data.exec_id}',
+                caption=f'Вывод выполнения {cbd.exec_id}',
             ),
         )
 
     if not files:
-        await query.answer(text='Размеры файлов слишком большие.', show_alert=True)
-        return
+        return q.answer(text='Размеры файлов слишком большие.', show_alert=True)
 
-    await query.answer(
+    await q.answer(
         text='Выгрузка файлов началась. Это может занять некоторое время.',
         show_alert=True,
     )
 
-    await query.message.answer_media_group(media=files)
+    await q.message.answer_media_group(media=files)
 
 
 @r.callback_query(SaveExecCode.filter())
-async def save_exec(
-    query: CallbackQuery,
-    exec_registry: ExecutionResultsRegistry,
-    callback_data: SaveExecCode,
-) -> None:
-    result = exec_registry.registry[callback_data.exec_id]
-    os.makedirs(f'.exec/{callback_data.exec_id}', exist_ok=True)
-    with open(f'.exec/{callback_data.exec_id}/exec.json', 'w', encoding='utf-8') as f:
+async def save_exec(q: CallbackQuery, exec_registry: ExecRegistry, cbd: SaveExecCode) -> None:
+    result = exec_registry.registry[cbd.exec_id]
+    os.makedirs(f'.exec/{cbd.exec_id}', exist_ok=True)
+    with open(f'.exec/{cbd.exec_id}/exec.json', 'w', encoding='utf-8') as f:
         f.write(
             json.dumps(
                 {
@@ -164,4 +143,4 @@ async def save_exec(
             ),
         )
 
-    await query.answer(f'Данные исполнения сохранены в .exec/{callback_data.exec_id}/exec.json.')
+    await q.answer(f'Данные исполнения сохранены в .exec/{cbd.exec_id}/exec.json.')

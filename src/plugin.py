@@ -12,7 +12,7 @@ from funpayhub.lib.properties.parameter import ListParameter, StringParameter, T
 from funpayhub.app.plugin import Plugin
 from funpayhub.app.telegram.ui.ids import MenuIds
 
-from .types import ExecutionResult, ExecutionResultsRegistry
+from .types import ExecutionResult, ExecRegistry
 from .telegram.menus import (
     ExecCodeMenuBuilder,
     ExecListMenuBuilder,
@@ -78,7 +78,7 @@ class ExecPlugin(Plugin):
         return router
 
     async def post_setup(self) -> None:
-        registry = ExecutionResultsRegistry()
+        registry = ExecRegistry()
         self.hub.workflow_data['exec_registry'] = registry
         folder = Path('.exec')
         if folder.exists() and folder.is_dir():
